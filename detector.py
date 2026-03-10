@@ -37,3 +37,26 @@ Usage:
 """
 import argparse
 import csv
+import sys
+import time
+from datetime import datetime
+
+
+# Dependency Checking and Imports Stuff :)
+try:
+    import obd
+    from obd import OBDCommand
+    from obd.protocols import ECU
+except ImportError:
+    print("Error: 'python-OBD' library not found. Please install it with 'pip install obd'")
+    sys.exit(1)
+    
+    
+    
+
+# Configuration (make sure that the PIDs you want to use are supported by your car's ECU)
+POLL_INTERVAL_SEC = 0.25        # How often to query the OBD adapter (seconds)
+REGEN_TORQUE_THRESHOLD = -5     # Nm  – torque below this = regen (motor braking)
+REGEN_CURRENT_THRESHOLD = 1.0   # A   – battery current above this = charging = regen
+DECEL_THRESHOLD = -0.5          # m/s² – heuristic: deceleration stronger than this
+THROTTLE_OFF_THRESHOLD = 5      # %   – throttle below this = foot off pedal
