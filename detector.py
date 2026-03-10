@@ -122,4 +122,90 @@ def _decode_bmw_i3_battery_current(messages):
 
 
 
-# Vehicle profiles (add that later)
+# Vehicle profiles | (Copy and pasted from another source, so may be some redundant fields)
+VEHICLE_PROFILES = {
+    "generic": {
+        "name": "Generic OBD-II",
+        "description": "Heuristic detection using standard OBD-II PIDs (works on any car)",
+        "torque_cmd": None,
+        "current_cmd": None,
+    },
+    "nissan_leaf": {
+        "name": "Nissan Leaf (Gen 1 & 2)",
+        "description": "Uses Leaf-specific battery current and motor torque PIDs",
+        "torque_cmd": OBDCommand(
+            "LEAF_MOTOR_TORQUE",
+            "Nissan Leaf Motor Torque",
+            b"022101",
+            6,
+            _decode_nissan_leaf_motor_torque,
+            ECU.ENGINE,
+            True,
+        ),
+        "current_cmd": OBDCommand(
+            "LEAF_BATTERY_CURRENT",
+            "Nissan Leaf Battery Current",
+            b"022101",
+            6,
+            _decode_nissan_leaf_battery_current,
+            ECU.ENGINE,
+            True,
+        ),
+    },
+    "chevy_bolt": {
+        "name": "Chevrolet Bolt EV / Volt",
+        "description": "Uses GM-specific HV battery current PID",
+        "torque_cmd": None,
+        "current_cmd": OBDCommand(
+            "BOLT_BATTERY_CURRENT",
+            "Chevy Bolt HV Battery Current",
+            b"222B16",
+            6,
+            _decode_chevy_bolt_battery_current,
+            ECU.ENGINE,
+            True,
+        ),
+    },
+    "toyota_prius": {
+        "name": "Toyota Prius / RAV4 Hybrid",
+        "description": "Uses Toyota MG2 torque PID for accurate regen detection",
+        "torque_cmd": OBDCommand(
+            "PRIUS_MG2_TORQUE",
+            "Toyota Prius MG2 Motor Torque",
+            b"21E4",
+            6,
+            _decode_toyota_prius_motor_torque,
+            ECU.ENGINE,
+            True,
+        ),
+        "current_cmd": None,
+    },
+    "hyundai_ioniq": {
+        "name": "Hyundai Ioniq / Kona EV",
+        "description": "Uses Hyundai-specific battery current PID",
+        "torque_cmd": None,
+        "current_cmd": OBDCommand(
+            "IONIQ_BATTERY_CURRENT",
+            "Hyundai Ioniq Battery Current",
+            b"220101",
+            6,
+            _decode_hyundai_ioniq_battery_current,
+            ECU.ENGINE,
+            True,
+        ),
+    },
+    "bmw_i3": {
+        "name": "BMW i3 / i8",
+        "description": "Uses BMW-specific HV battery current PID",
+        "torque_cmd": None,
+        "current_cmd": OBDCommand(
+            "BMW_BATTERY_CURRENT",
+            "BMW i3 Battery Current",
+            b"220D3C",
+            6,
+            _decode_bmw_i3_battery_current,
+            ECU.ENGINE,
+            True,
+        ),
+    },
+}
