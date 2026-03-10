@@ -209,3 +209,20 @@ VEHICLE_PROFILES = {
         ),
     },
 }
+
+# Helper: simple numerical differentition for speed to get acceleration
+class Differnetiator:
+    def __init__(self):
+        self._prev_value = None
+        self._prev_time = None
+        
+    def update(self,value:float) -> float | None:
+        now = time.monotonic()
+        result = None
+        if self._prev_value is not None and self._prev_time is not None:
+            dt = now - self._prev_time
+            if dt>0:
+                result=(value-self._prev_value)/dt
+        self._prev_value = value
+        self._prev_time = now
+        return result
