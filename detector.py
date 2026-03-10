@@ -51,8 +51,6 @@ except ImportError:
     print("Error: 'python-OBD' library not found. Please install it with 'pip install obd'")
     sys.exit(1)
     
-    
-    
 
 # Configuration (make sure that the PIDs you want to use are supported by your car's ECU)
 POLL_INTERVAL_SEC = 0.25        # How often to query the OBD adapter (seconds)
@@ -60,3 +58,68 @@ REGEN_TORQUE_THRESHOLD = -5     # Nm  – torque below this = regen (motor braki
 REGEN_CURRENT_THRESHOLD = 1.0   # A   – battery current above this = charging = regen
 DECEL_THRESHOLD = -0.5          # m/s² – heuristic: deceleration stronger than this
 THROTTLE_OFF_THRESHOLD = 5      # %   – throttle below this = foot off pedal
+
+
+# Manufacturer-specific PID definitions
+
+# Custom PIDs use raw OBD mode 0x21 or 0x22 commands.
+# Each entry: (mode, pid_hex, bytes, description, decode_fn)
+# decode_fn receives raw bytes and returns a float value.
+
+def _decode_nissan_leaf_battery_current(messages):
+    #Nissan Leaf battery current. Positive = charging (regen).
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    # Signed 16-bit, LSB = 0.1A, positive = discharge on some firmwares
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.1  # amps; positive means charging in our convention
+
+
+def _decode_nissan_leaf_motor_torque(messages):
+    #Nissan Leaf motor torque. Negative = regen.
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.5  # Nm
+
+
+def _decode_chevy_bolt_battery_current(messages):
+    #Chevy Bolt HV battery current.
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.05  # amps
+
+
+def _decode_toyota_prius_motor_torque(messages):
+    #Toyota Prius MG2 motor torque.
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.317  # Nm
+
+
+def _decode_hyundai_ioniq_battery_current(messages):
+    #Hyundai Ioniq / Kona EV battery current.
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.1  # amps
+
+
+def _decode_bmw_i3_battery_current(messages):
+    #BMW i3 HV battery current.
+    d = messages[0].data
+    raw = (d[3] << 8 | d[4])
+    if raw > 32767:
+        raw -= 65536
+    return raw * 0.1  # amps
+
+
+
+# Vehicle profiles (add that later)
