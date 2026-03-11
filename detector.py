@@ -325,7 +325,7 @@ def _open_log(self):
     ]
     self._csv_writer = csv.DictWriter(self._csv_file,fieldnames=fieldnames)
     self._csv_writer.writeheader()
-    print("Logging all that data toooo: {self.log_path}\n")
+    print(f"Logging all that data toooo: {self.log_path}\n")
 
     def _log_row(self,row:dict):
         if self._csv_writer:
