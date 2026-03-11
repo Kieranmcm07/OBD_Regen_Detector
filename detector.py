@@ -275,4 +275,17 @@ def connect(self):
     self.connection = obd.OBD(**kwargs)
     
     if not self.connection.is_connected():
+        print("FAILED!")
+        print(" - Check that your ELM327 adapter is plugged in.")
+        print(" - Try specifying --port manually (e.g. --port /dev/ttyUSB0 or COM3).")
+    
+    print(f"OK ({self.connection.port_name()})")
+    print(f"Protocol: {self.connection.protocol_name()}\n")
+    
+    # register custom PIDs if defined
+    profile = self.vehicle_profile
+    if profile.get("torque_cmd"):
+        self.connection.supported_commands.add(profile["torque_cmd"])
+    if profile.get("current_cmd"):
+        self.connection.supported_commands.add(profile["current_cmd"])
     
