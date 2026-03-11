@@ -261,3 +261,18 @@ class RegenDetector:
         self.regen_sessions = 0
         self._in_regen = False
         self._session_start = None
+
+# Connection
+def connect(self):
+    if self.simulate:
+        print("Running in simulation mode with fake data (no car needed)")
+        return
+    print(f"Vehicle Profile: {self.vehicle_profile['name']}")
+    print(f"{self.vehicle_profile['description']}\n")
+    print("Connecting to OBD-II adapter...", end=" ",flush=True)
+    
+    kwargs = {"portstr": self.port} if self.port else {}
+    self.connection = obd.OBD(**kwargs)
+    
+    if not self.connection.is_connected():
+    
