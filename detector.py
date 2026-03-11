@@ -1,9 +1,16 @@
 """
+<<<<<<< HEAD
 Right now this is just a simulation because im not sure how to test it without a car, but I will add real OBD reading functionality later on in future.
 
 NOTE: I have used Claude in this project to experiment with the AI model.
 
 In this project im mainly trying to learn how OBD protocols work and other things.
+=======
+
+NOTE: I have used Claude in this project to experiment with the AI model.
+
+In this project im mainly trying to learn how OBD protocols work and othwr things.
+>>>>>>> d5ccd51a83b280872fb88ab615f71e71a5a6542b
 
 
 Regenerative Braking Detector by Kieranmcm07
