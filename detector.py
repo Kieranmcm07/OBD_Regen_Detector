@@ -1,4 +1,11 @@
 """
+Right now this is just a simulation because im not sure how to test it without a car, but I will add real OBD reading functionality later on in future.
+
+NOTE: I have used Claude in this project to experiment with the AI model.
+
+In this project im mainly trying to learn how OBD protocols work and other things.
+
+
 Regenerative Braking Detector by Kieranmcm07
 --------------------------------------------
 So how this works is that it detects when a EV/hybrid is in the regeneratrive braking mode by
@@ -262,6 +269,7 @@ class RegenDetector:
         self._in_regen = False
         self._session_start = None
 
+
 # Connection
 def connect(self):
     if self.simulate:
@@ -269,23 +277,53 @@ def connect(self):
         return
     print(f"Vehicle Profile: {self.vehicle_profile['name']}")
     print(f"{self.vehicle_profile['description']}\n")
-    print("Connecting to OBD-II adapter...", end=" ",flush=True)
-    
+    print("Connecting to OBD-II adapter...", end=" ", flush=True)
+
     kwargs = {"portstr": self.port} if self.port else {}
     self.connection = obd.OBD(**kwargs)
-    
+
     if not self.connection.is_connected():
         print("FAILED!")
         print(" - Check that your ELM327 adapter is plugged in.")
         print(" - Try specifying --port manually (e.g. --port /dev/ttyUSB0 or COM3).")
-    
+
     print(f"OK ({self.connection.port_name()})")
     print(f"Protocol: {self.connection.protocol_name()}\n")
-    
+
     # register custom PIDs if defined
     profile = self.vehicle_profile
     if profile.get("torque_cmd"):
         self.connection.supported_commands.add(profile["torque_cmd"])
     if profile.get("current_cmd"):
         self.connection.supported_commands.add(profile["current_cmd"])
-    
+
+
+# Some csv logging stuff
+def _open_log(self):
+    # if not a log path then skip this yap
+    if not self.log_path:
+        return
+
+    self._csv_file = open(self.log_path, "w", newline="")
+    fieldnames = [
+        "timestamp",
+        "speed_kph",
+        "throttle_pct",
+        "torque_nm",
+        "battery_current_a",
+        "acceleration_ms2",
+        "regen",
+        "method",
+        "vehicle",
+    ]
+    self._csv_writer = csv.DictWriter(self._csv_file,fieldnames=fieldnames)
+    self._csv_writer.writeheader()
+    print("Logging all that data toooo: {self.log_path}\n")
+
+    def _log_row(self,row:dict):
+        if self._csv_writer:
+            self._csv_writer.writerow(row)
+            self._csv_file.flush()
+    def _close_log(self):
+        if self._csv_file:
+            self._csv_file.close()
