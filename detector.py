@@ -1,4 +1,10 @@
 """
+
+NOTE: I have used Claude in this project to experiment with the AI model.
+
+In this project im mainly trying to learn how OBD protocols work and othwr things.
+
+
 Regenerative Braking Detector by Kieranmcm07
 --------------------------------------------
 So how this works is that it detects when a EV/hybrid is in the regeneratrive braking mode by
