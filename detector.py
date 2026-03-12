@@ -323,14 +323,37 @@ def _open_log(self):
         "method",
         "vehicle",
     ]
-    self._csv_writer = csv.DictWriter(self._csv_file,fieldnames=fieldnames)
+    self._csv_writer = csv.DictWriter(self._csv_file, fieldnames=fieldnames)
     self._csv_writer.writeheader()
     print(f"Logging all that data toooo: {self.log_path}\n")
 
-    def _log_row(self,row:dict):
+    def _log_row(self, row: dict):
         if self._csv_writer:
             self._csv_writer.writerow(row)
             self._csv_file.flush()
+
     def _close_log(self):
         if self._csv_file:
             self._csv_file.close()
+
+
+# OBD query helpers
+def _query_standard(self, cmd) -> float | None:
+    if not self.connection:
+        return None
+    resp = self.connection.query(cmd)
+    if resp.is_null():
+        return None
+    return resp.value.magnitude
+
+
+def _query_custom(self, cmd) -> float | None:
+    if not self.connection:
+        return None
+    try:
+        resp = self.connection.query(cmd)
+        if resp.is_null():
+            return None
+        return resp.value
+    except Exception:
+        return None
