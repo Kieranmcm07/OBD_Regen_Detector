@@ -358,25 +358,27 @@ def _query_custom(self, cmd) -> float | None:
     except Exception:
         return None
 
+
 # some simulated stuff (so like if theres no car to test it on and stuff)
 _sim_step = 0
 
+
 def _simulate_data(self) -> dict:
     import math
-    
+
     t = self._sim_step * POLL_INTERVAL_SEC
-    self._sim_step+= 1
-    cycle = t%20
+    self._sim_step += 1
+    cycle = t % 20
     if cycle < 5:
-        speed,torque,throttle,current=cycle*10,80,60,-15
+        speed, torque, throttle, current = cycle * 10, 80, 60, -15
     elif cycle < 8:
-        speed,torque,throttle,curren=50,10,20,-2
+        speed, torque, throttle, curren = 50, 10, 20, -2
     elif cycle < 14:
-        speed= max(0,50-(cycle-8)*8)
-        torque,throttle,current=-30,0,18
+        speed = max(0, 50 - (cycle - 8) * 8)
+        torque, throttle, current = -30, 0, 18
     else:
-        speed,torque,throttle,currrent=0,0,0,0
-    noise=math.sin(t*7)*2
+        speed, torque, throttle, currrent = 0, 0, 0, 0
+    noise = math.sin(t * 7) * 2
     return {
         "speed_kph": round(speed + noise, 1),
         "throttle_pct": round(max(0, throttle + noise), 1),
