@@ -389,3 +389,15 @@ def _simulate_data(self) -> dict:
 # The actual regen detection logic (well i really hope it works, but i guess we will see when i test it on a car)
 def _detect_regen(self,speed,throttle,torque,current,accel) -> tuple[bool, str]:
     # method 1: motor torque which is most reliable
+    if torque is not None:
+        return (torque < REGEN_TORQUE_THRESHOLD), "negative_torque"
+    # method 2: battery current (positive = charging = regen)
+    if current is not None:
+        return (current > REGEN_CURRENT_THRESHOLD), "battery_current"
+    # method 3: heuristic – throttle released + decelerating
+    if throttle is not None and accel is not None:
+        return (
+            throttle < THROTTLE_OFF_THRESHOLD and accel < DECEL_THRESHOLD,
+            "heuristic",
+        )
+    return False, "unknown"
