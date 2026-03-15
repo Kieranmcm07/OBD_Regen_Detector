@@ -385,3 +385,7 @@ def _simulate_data(self) -> dict:
         "torque_nm": round(torque + noise, 1),
         "battery_current_a": round(current - noise, 1),
     }
+    
+# The actual regen detection logic (well i really hope it works, but i guess we will see when i test it on a car)
+def _detect_regen(self,speed,throttle,torque,current,accel) -> tuple[bool, str]:
+    # method 1: motor torque which is most reliable
