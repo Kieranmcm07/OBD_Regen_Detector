@@ -1,16 +1,8 @@
 """
-<<<<<<< HEAD
-Right now this is just a simulation because im not sure how to test it without a car, but I will add real OBD reading functionality later on in future.
-
-NOTE: I have used Claude in this project to experiment with the AI model.
-
-In this project im mainly trying to learn how OBD protocols work and other things.
-=======
 
 NOTE: I have used Claude in this project to experiment with the AI model.
 
 In this project im mainly trying to learn how OBD protocols work and othwr things.
->>>>>>> d5ccd51a83b280872fb88ab615f71e71a5a6542b
 
 
 Regenerative Braking Detector by Kieranmcm07
@@ -401,3 +393,12 @@ def _detect_regen(self,speed,throttle,torque,current,accel) -> tuple[bool, str]:
             "heuristic",
         )
     return False, "unknown"
+
+# main area of program
+def run(self):
+    self.connect()
+    self._open_log()
+    profile = self.vehicle_profile
+    
+    print("Monitoring for regenerative braking. CTRL+C to kill program.")
+    print(f"{'Time':12}")
