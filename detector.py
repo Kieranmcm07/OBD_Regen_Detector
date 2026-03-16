@@ -377,9 +377,10 @@ def _simulate_data(self) -> dict:
         "torque_nm": round(torque + noise, 1),
         "battery_current_a": round(current - noise, 1),
     }
-    
+
+
 # The actual regen detection logic (well i really hope it works, but i guess we will see when i test it on a car)
-def _detect_regen(self,speed,throttle,torque,current,accel) -> tuple[bool, str]:
+def _detect_regen(self, speed, throttle, torque, current, accel) -> tuple[bool, str]:
     # method 1: motor torque which is most reliable
     if torque is not None:
         return (torque < REGEN_TORQUE_THRESHOLD), "negative_torque"
@@ -394,11 +395,87 @@ def _detect_regen(self,speed,throttle,torque,current,accel) -> tuple[bool, str]:
         )
     return False, "unknown"
 
+
 # main area of program
 def run(self):
     self.connect()
     self._open_log()
     profile = self.vehicle_profile
-    
+
     print("Monitoring for regenerative braking. CTRL+C to kill program.")
-    print(f"{'Time':12}")
+    print(
+        f"{'Time':12} {'Speed':>9} {'Throttle':>9} {'Torque':>10} {'BatCurr:':>9} {'Accel':>9} {'Regen':>7}"
+    )
+    print("-" * 78)
+    
+    try:
+        while True:
+            ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
+
+            if self.simulate:
+                raw = self._simulate_readings()
+                speed    = raw["speed_kph"]
+                throttle = raw["throttle_pct"]
+                torque   = raw["torque_nm"]
+                current  = raw["battery_current_a"]
+            else:
+                speed    = self._query_standard(obd.commands.SPEED)
+                throttle = self._query_standard(obd.commands.THROTTLE_POS)
+                torque   = self._query_custom(profile.get("torque_cmd"))
+                current  = self._query_custom(profile.get("current_cmd"))
+
+            accel = self._speed_diff.update(
+                speed / 3.6 if speed is not None else 0.0
+            )
+
+            is_regen, method = self._detect_regen(
+                speed, throttle, torque, current, accel
+            )
+
+            # Session tracking
+            self.total_samples += 1
+            if is_regen:
+                self.regen_samples += 1
+                if not self._in_regen:
+                    self._in_regen = True
+                    self.regen_sessions += 1
+                    self._session_start = datetime.now()
+            else:
+                if self._in_regen:
+                    duration = (datetime.now() - self._session_start).total_seconds()
+                    print(f"\n  ✅ Regen session #{self.regen_sessions} ended "
+                            f"({duration:.1f}s)\n")
+                self._in_regen = False
+
+            def fmt(v, unit=""):
+                return f"{v:>7.1f}{unit}" if v is not None else "    n/a "
+
+            regen_flag = "⚡ YES" if is_regen else "  no "
+            print(
+                f"{ts:12}  {fmt(speed,'kph')}  {fmt(throttle,'%')}  "
+                f"{fmt(torque,'Nm')}  {fmt(current,'A')}  "
+                f"{fmt(accel,'m/s²')}  {regen_flag}",
+                flush=True,
+            )
+
+            self._log_row({
+                "timestamp": datetime.now().isoformat(),
+                "speed_kph": speed,
+                "throttle_pct": throttle,
+                "torque_nm": torque,
+                "battery_current_a": current,
+                "acceleration_ms2": round(accel, 3) if accel else None,
+                "regen": int(is_regen),
+                "method": method,
+                "vehicle": self.vehicle_key,
+            })
+
+            time.sleep(POLL_INTERVAL_SEC)
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        self._print_summary()
+        self._close_log()
+        if self.connection:
+            self.connection.close()
