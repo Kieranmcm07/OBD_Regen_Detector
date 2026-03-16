@@ -479,3 +479,7 @@ def run(self):
         self._close_log()
         if self.connection:
             self.connection.close()
+            
+# A little summary
+def _print_summary(self):
+    pass
