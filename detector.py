@@ -407,26 +407,24 @@ def run(self):
         f"{'Time':12} {'Speed':>9} {'Throttle':>9} {'Torque':>10} {'BatCurr:':>9} {'Accel':>9} {'Regen':>7}"
     )
     print("-" * 78)
-    
+
     try:
         while True:
             ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
 
             if self.simulate:
                 raw = self._simulate_readings()
-                speed    = raw["speed_kph"]
+                speed = raw["speed_kph"]
                 throttle = raw["throttle_pct"]
-                torque   = raw["torque_nm"]
-                current  = raw["battery_current_a"]
+                torque = raw["torque_nm"]
+                current = raw["battery_current_a"]
             else:
-                speed    = self._query_standard(obd.commands.SPEED)
+                speed = self._query_standard(obd.commands.SPEED)
                 throttle = self._query_standard(obd.commands.THROTTLE_POS)
-                torque   = self._query_custom(profile.get("torque_cmd"))
-                current  = self._query_custom(profile.get("current_cmd"))
+                torque = self._query_custom(profile.get("torque_cmd"))
+                current = self._query_custom(profile.get("current_cmd"))
 
-            accel = self._speed_diff.update(
-                speed / 3.6 if speed is not None else 0.0
-            )
+            accel = self._speed_diff.update(speed / 3.6 if speed is not None else 0.0)
 
             is_regen, method = self._detect_regen(
                 speed, throttle, torque, current, accel
@@ -443,8 +441,10 @@ def run(self):
             else:
                 if self._in_regen:
                     duration = (datetime.now() - self._session_start).total_seconds()
-                    print(f"\n  ✅ Regen session #{self.regen_sessions} ended "
-                            f"({duration:.1f}s)\n")
+                    print(
+                        f"\n  ✅ Regen session #{self.regen_sessions} ended "
+                        f"({duration:.1f}s)\n"
+                    )
                 self._in_regen = False
 
             def fmt(v, unit=""):
@@ -458,17 +458,19 @@ def run(self):
                 flush=True,
             )
 
-            self._log_row({
-                "timestamp": datetime.now().isoformat(),
-                "speed_kph": speed,
-                "throttle_pct": throttle,
-                "torque_nm": torque,
-                "battery_current_a": current,
-                "acceleration_ms2": round(accel, 3) if accel else None,
-                "regen": int(is_regen),
-                "method": method,
-                "vehicle": self.vehicle_key,
-            })
+            self._log_row(
+                {
+                    "timestamp": datetime.now().isoformat(),
+                    "speed_kph": speed,
+                    "throttle_pct": throttle,
+                    "torque_nm": torque,
+                    "battery_current_a": current,
+                    "acceleration_ms2": round(accel, 3) if accel else None,
+                    "regen": int(is_regen),
+                    "method": method,
+                    "vehicle": self.vehicle_key,
+                }
+            )
 
             time.sleep(POLL_INTERVAL_SEC)
 
@@ -479,7 +481,27 @@ def run(self):
         self._close_log()
         if self.connection:
             self.connection.close()
-            
+
+
 # A little summary
 def _print_summary(self):
+    print("\n" + "=" * 50)
+    print("  Session Summary")
+    print("=" * 50)
+    pct = (self.regen_samples / self.total_samples * 100 if self.total_samples else 0)
+    print(f"  Vehicle         : {self.vehicle_profile['name']}")
+    print(f"  Total samples   : {self.total_samples}")
+    print(f"  Regen samples   : {self.regen_samples}  ({pct:.1f}%)")
+    print(f"  Regen sessions  : {self.regen_sessions}")
+    if self.log_path:
+        print(f"  Log saved to    : {self.log_path}")
+    print("=" * 50)
+    
+# entry point to run the program
+def main():
     pass
+
+
+
+if __name__ == "__main__":
+    main()
