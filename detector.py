@@ -488,7 +488,7 @@ def _print_summary(self):
     print("\n" + "=" * 50)
     print("  Session Summary")
     print("=" * 50)
-    pct = (self.regen_samples / self.total_samples * 100 if self.total_samples else 0)
+    pct = self.regen_samples / self.total_samples * 100 if self.total_samples else 0
     print(f"  Vehicle         : {self.vehicle_profile['name']}")
     print(f"  Total samples   : {self.total_samples}")
     print(f"  Regen samples   : {self.regen_samples}  ({pct:.1f}%)")
@@ -496,11 +496,11 @@ def _print_summary(self):
     if self.log_path:
         print(f"  Log saved to    : {self.log_path}")
     print("=" * 50)
-    
+
+
 # entry point to run the program
 def main():
     pass
-
 
 
 if __name__ == "__main__":
