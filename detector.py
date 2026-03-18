@@ -507,6 +507,44 @@ def main():
             f"  {k:20} – {v['name']}" for k, v in VEHICLE_PROFILES.items()
         )
     )
+    parser.add_argument(
+        "--port", default=None,
+        help="Serial port for ELM327 adapter (e.g. /dev/ttyUSB0 or COM3). "
+             "Auto-detected if omitted."
+    )
+    parser.add_argument(
+        "--vehicle", default="generic",
+        choices=list(VEHICLE_PROFILES.keys()),
+        help="Vehicle profile for manufacturer-specific PIDs (default: generic)."
+    )
+    parser.add_argument(
+        "--log", default=None, metavar="FILE",
+        help="Optional CSV file path to log readings."
+    )
+    parser.add_argument(
+        "--simulate", action="store_true",
+        help="Run in simulation mode (no OBD adapter required)."
+    )
+    parser.add_argument(
+        "--list-vehicles", action="store_true",
+        help="List all supported vehicle profiles and exit."
+    )
+    args = parser.parse_args()
+    
+    if args.list_vehicles:
+        print("\nSupported vehicle profiles:\n")
+        for key, profile in VEHICLE_PROFILES.items():
+            print(f"  --vehicle {key}")
+            print(f"    Name : {profile['name']}")
+            print(f"    Info : {profile['description']}\n")
+        sys.exit(0)
 
+    detector = RegenDetector(
+        port=args.port,
+        log_path=args.log,
+        simulate=args.simulate,
+        vehicle=args.vehicle,
+    )
+    detector.run()
 if __name__ == "__main__":
     main()
