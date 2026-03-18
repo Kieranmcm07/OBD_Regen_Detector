@@ -222,7 +222,7 @@ VEHICLE_PROFILES = {
 
 # Helper: simple numerical differentition for speed to get acceleration
 # Recently learned this in object oriented programming class, so thought it would be fun to implement here for the deceleration heuristic in generic mode.
-class Differnetiator:
+class Differentiator:
     def __init__(self):
         self._prev_value = None
         self._prev_time = None
@@ -259,7 +259,7 @@ class RegenDetector:
         self.connection = None
         self._csv_file = None
         self._csv_writer = None
-        self._speed_diff = Differnetiator()
+        self._speed_diff = Differentiator()
 
         # some stats
         self.total_samples = 0
@@ -270,54 +270,55 @@ class RegenDetector:
 
 
 # Connection
-def connect(self):
-    if self.simulate:
-        print("Running in simulation mode with fake data (no car needed)")
-        return
-    print(f"Vehicle Profile: {self.vehicle_profile['name']}")
-    print(f"{self.vehicle_profile['description']}\n")
-    print("Connecting to OBD-II adapter...", end=" ", flush=True)
+    def connect(self):
+        if self.simulate:
+            print("Running in simulation mode with fake data (no car needed)")
+            return
+        print(f"Vehicle Profile: {self.vehicle_profile['name']}")
+        print(f"{self.vehicle_profile['description']}\n")
+        print("Connecting to OBD-II adapter...", end=" ", flush=True)
 
-    kwargs = {"portstr": self.port} if self.port else {}
-    self.connection = obd.OBD(**kwargs)
+        kwargs = {"portstr": self.port} if self.port else {}
+        self.connection = obd.OBD(**kwargs)
 
-    if not self.connection.is_connected():
-        print("FAILED!")
-        print(" - Check that your ELM327 adapter is plugged in.")
-        print(" - Try specifying --port manually (e.g. --port /dev/ttyUSB0 or COM3).")
+        if not self.connection.is_connected():
+            print("FAILED!")
+            print(" - Check that your ELM327 adapter is plugged in.")
+            print(" - Try specifying --port manually (e.g. --port /dev/ttyUSB0 or COM3).")
+            sys.exit(1)
 
-    print(f"OK ({self.connection.port_name()})")
-    print(f"Protocol: {self.connection.protocol_name()}\n")
+        print(f"OK ({self.connection.port_name()})")
+        print(f"Protocol: {self.connection.protocol_name()}\n")
 
-    # register custom PIDs if defined
-    profile = self.vehicle_profile
-    if profile.get("torque_cmd"):
-        self.connection.supported_commands.add(profile["torque_cmd"])
-    if profile.get("current_cmd"):
-        self.connection.supported_commands.add(profile["current_cmd"])
+        # register custom PIDs if defined
+        profile = self.vehicle_profile
+        if profile.get("torque_cmd"):
+            self.connection.supported_commands.add(profile["torque_cmd"])
+        if profile.get("current_cmd"):
+            self.connection.supported_commands.add(profile["current_cmd"])
 
 
 # Some csv logging stuff
-def _open_log(self):
-    # if not a log path then skip this yap
-    if not self.log_path:
-        return
+    def _open_log(self):
+        # if not a log path then skip this yap
+        if not self.log_path:
+            return
 
-    self._csv_file = open(self.log_path, "w", newline="")
-    fieldnames = [
-        "timestamp",
-        "speed_kph",
-        "throttle_pct",
-        "torque_nm",
-        "battery_current_a",
-        "acceleration_ms2",
-        "regen",
-        "method",
-        "vehicle",
-    ]
-    self._csv_writer = csv.DictWriter(self._csv_file, fieldnames=fieldnames)
-    self._csv_writer.writeheader()
-    print(f"Logging all that data toooo: {self.log_path}\n")
+        self._csv_file = open(self.log_path, "w", newline="")
+        fieldnames = [
+            "timestamp",
+            "speed_kph",
+            "throttle_pct",
+            "torque_nm",
+            "battery_current_a",
+            "acceleration_ms2",
+            "regen",
+            "method",
+            "vehicle",
+        ]
+        self._csv_writer = csv.DictWriter(self._csv_file, fieldnames=fieldnames)
+        self._csv_writer.writeheader()
+        print(f"Logging all that data toooo: {self.log_path}\n")
 
     def _log_row(self, row: dict):
         if self._csv_writer:
@@ -330,172 +331,171 @@ def _open_log(self):
 
 
 # OBD query helpers
-def _query_standard(self, cmd) -> float | None:
-    if not self.connection:
-        return None
-    resp = self.connection.query(cmd)
-    if resp.is_null():
-        return None
-    return resp.value.magnitude
-
-
-def _query_custom(self, cmd) -> float | None:
-    if not self.connection:
-        return None
-    try:
+    def _query_standard(self, cmd) -> float | None:
+        if not self.connection:
+            return None
         resp = self.connection.query(cmd)
         if resp.is_null():
             return None
-        return resp.value
-    except Exception:
-        return None
+        return resp.value.magnitude
+
+
+    def _query_custom(self, cmd) -> float | None:
+        if not self.connection:
+            return None
+        try:
+            resp = self.connection.query(cmd)
+            if resp.is_null():
+                return None
+            return resp.value
+        except Exception:
+            return None
 
 
 # some simulated stuff (so like if theres no car to test it on and stuff)
-_sim_step = 0
+    _sim_step = 0
 
+    def _simulate_readings(self) -> dict:
+        import math
 
-def _simulate_data(self) -> dict:
-    import math
-
-    t = self._sim_step * POLL_INTERVAL_SEC
-    self._sim_step += 1
-    cycle = t % 20
-    if cycle < 5:
-        speed, torque, throttle, current = cycle * 10, 80, 60, -15
-    elif cycle < 8:
-        speed, torque, throttle, curren = 50, 10, 20, -2
-    elif cycle < 14:
-        speed = max(0, 50 - (cycle - 8) * 8)
-        torque, throttle, current = -30, 0, 18
-    else:
-        speed, torque, throttle, currrent = 0, 0, 0, 0
-    noise = math.sin(t * 7) * 2
-    return {
-        "speed_kph": round(speed + noise, 1),
-        "throttle_pct": round(max(0, throttle + noise), 1),
-        "torque_nm": round(torque + noise, 1),
-        "battery_current_a": round(current - noise, 1),
-    }
+        t = self._sim_step * POLL_INTERVAL_SEC
+        self._sim_step += 1
+        cycle = t % 20
+        if cycle < 5:
+            speed, torque, throttle, current = cycle * 10, 80, 60, -15
+        elif cycle < 8:
+            speed, torque, throttle, current = 50, 10, 20, -2
+        elif cycle < 14:
+            speed = max(0, 50 - (cycle - 8) * 8)
+            torque, throttle, current = -30, 0, 18
+        else:
+            speed, torque, throttle, current = 0, 0, 0, 0
+        noise = math.sin(t * 7) * 2
+        return {
+            "speed_kph": round(speed + noise, 1),
+            "throttle_pct": round(max(0, throttle + noise), 1),
+            "torque_nm": round(torque + noise, 1),
+            "battery_current_a": round(current - noise, 1),
+        }
 
 
 # The actual regen detection logic (well i really hope it works, but i guess we will see when i test it on a car)
-def _detect_regen(self, speed, throttle, torque, current, accel) -> tuple[bool, str]:
+    def _detect_regen(self, speed, throttle, torque, current, accel) -> tuple[bool, str]:
     # method 1: motor torque which is most reliable
-    if torque is not None:
-        return (torque < REGEN_TORQUE_THRESHOLD), "negative_torque"
-    # method 2: battery current (positive = charging = regen)
-    if current is not None:
-        return (current > REGEN_CURRENT_THRESHOLD), "battery_current"
-    # method 3: heuristic – throttle released + decelerating
-    if throttle is not None and accel is not None:
-        return (
-            throttle < THROTTLE_OFF_THRESHOLD and accel < DECEL_THRESHOLD,
-            "heuristic",
-        )
-    return False, "unknown"
+        if torque is not None:
+            return (torque < REGEN_TORQUE_THRESHOLD), "negative_torque"
+        # method 2: battery current (positive = charging = regen)
+        if current is not None:
+            return (current > REGEN_CURRENT_THRESHOLD), "battery_current"
+        # method 3: heuristic – throttle released + decelerating
+        if throttle is not None and accel is not None:
+            return (
+                throttle < THROTTLE_OFF_THRESHOLD and accel < DECEL_THRESHOLD,
+                "heuristic",
+            )
+        return False, "unknown"
 
 
 # main area of program
-def run(self):
-    self.connect()
-    self._open_log()
-    profile = self.vehicle_profile
+    def run(self):
+        self.connect()
+        self._open_log()
+        profile = self.vehicle_profile
 
-    print("Monitoring for regenerative braking. CTRL+C to kill program.")
-    print(
-        f"{'Time':12} {'Speed':>9} {'Throttle':>9} {'Torque':>10} {'BatCurr:':>9} {'Accel':>9} {'Regen':>7}"
-    )
-    print("-" * 78)
+        print("Monitoring for regenerative braking. CTRL+C to kill program.")
+        print(
+            f"{'Time':12} {'Speed':>9} {'Throttle':>9} {'Torque':>10} {'BatCurr:':>9} {'Accel':>9} {'Regen':>7}"
+        )
+        print("-" * 78)
 
-    try:
-        while True:
-            ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
+        try:
+            while True:
+                ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
 
-            if self.simulate:
-                raw = self._simulate_readings()
-                speed = raw["speed_kph"]
-                throttle = raw["throttle_pct"]
-                torque = raw["torque_nm"]
-                current = raw["battery_current_a"]
-            else:
-                speed = self._query_standard(obd.commands.SPEED)
-                throttle = self._query_standard(obd.commands.THROTTLE_POS)
-                torque = self._query_custom(profile.get("torque_cmd"))
-                current = self._query_custom(profile.get("current_cmd"))
+                if self.simulate:
+                    raw = self._simulate_readings()
+                    speed = raw["speed_kph"]
+                    throttle = raw["throttle_pct"]
+                    torque = raw["torque_nm"]
+                    current = raw["battery_current_a"]
+                else:
+                    speed = self._query_standard(obd.commands.SPEED)
+                    throttle = self._query_standard(obd.commands.THROTTLE_POS)
+                    torque = self._query_custom(profile.get("torque_cmd"))
+                    current = self._query_custom(profile.get("current_cmd"))
 
-            accel = self._speed_diff.update(speed / 3.6 if speed is not None else 0.0)
+                accel = self._speed_diff.update(speed / 3.6 if speed is not None else 0.0)
 
-            is_regen, method = self._detect_regen(
-                speed, throttle, torque, current, accel
-            )
+                is_regen, method = self._detect_regen(
+                    speed, throttle, torque, current, accel
+                )
 
-            # Session tracking
-            self.total_samples += 1
-            if is_regen:
-                self.regen_samples += 1
-                if not self._in_regen:
-                    self._in_regen = True
-                    self.regen_sessions += 1
-                    self._session_start = datetime.now()
-            else:
-                if self._in_regen:
-                    duration = (datetime.now() - self._session_start).total_seconds()
-                    print(
-                        f"\n  ✅ Regen session #{self.regen_sessions} ended "
-                        f"({duration:.1f}s)\n"
-                    )
-                self._in_regen = False
+                # Session tracking
+                self.total_samples += 1
+                if is_regen:
+                    self.regen_samples += 1
+                    if not self._in_regen:
+                        self._in_regen = True
+                        self.regen_sessions += 1
+                        self._session_start = datetime.now()
+                else:
+                    if self._in_regen:
+                        duration = (datetime.now() - self._session_start).total_seconds()
+                        print(
+                            f"\n  ✅ Regen session #{self.regen_sessions} ended "
+                            f"({duration:.1f}s)\n"
+                        )
+                    self._in_regen = False
 
-            def fmt(v, unit=""):
-                return f"{v:>7.1f}{unit}" if v is not None else "    n/a "
+                def fmt(v, unit=""):
+                    return f"{v:>7.1f}{unit}" if v is not None else "    n/a "
 
-            regen_flag = "⚡ YES" if is_regen else "  no "
-            print(
-                f"{ts:12}  {fmt(speed,'kph')}  {fmt(throttle,'%')}  "
-                f"{fmt(torque,'Nm')}  {fmt(current,'A')}  "
-                f"{fmt(accel,'m/s²')}  {regen_flag}",
-                flush=True,
-            )
+                regen_flag = "⚡ YES" if is_regen else "  no "
+                print(
+                    f"{ts:12}  {fmt(speed,'kph')}  {fmt(throttle,'%')}  "
+                    f"{fmt(torque,'Nm')}  {fmt(current,'A')}  "
+                    f"{fmt(accel,'m/s²')}  {regen_flag}",
+                    flush=True,
+                )
 
-            self._log_row(
-                {
-                    "timestamp": datetime.now().isoformat(),
-                    "speed_kph": speed,
-                    "throttle_pct": throttle,
-                    "torque_nm": torque,
-                    "battery_current_a": current,
-                    "acceleration_ms2": round(accel, 3) if accel else None,
-                    "regen": int(is_regen),
-                    "method": method,
-                    "vehicle": self.vehicle_key,
-                }
-            )
+                self._log_row(
+                    {
+                        "timestamp": datetime.now().isoformat(),
+                        "speed_kph": speed,
+                        "throttle_pct": throttle,
+                        "torque_nm": torque,
+                        "battery_current_a": current,
+                        "acceleration_ms2": round(accel, 3) if accel else None,
+                        "regen": int(is_regen),
+                        "method": method,
+                        "vehicle": self.vehicle_key,
+                    }
+                )
 
-            time.sleep(POLL_INTERVAL_SEC)
+                time.sleep(POLL_INTERVAL_SEC)
 
-    except KeyboardInterrupt:
-        pass
-    finally:
-        self._print_summary()
-        self._close_log()
-        if self.connection:
-            self.connection.close()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self._print_summary()
+            self._close_log()
+            if self.connection:
+                self.connection.close()
 
 
 # A little summary
-def _print_summary(self):
-    print("\n" + "=" * 50)
-    print("  Session Summary")
-    print("=" * 50)
-    pct = self.regen_samples / self.total_samples * 100 if self.total_samples else 0
-    print(f"  Vehicle         : {self.vehicle_profile['name']}")
-    print(f"  Total samples   : {self.total_samples}")
-    print(f"  Regen samples   : {self.regen_samples}  ({pct:.1f}%)")
-    print(f"  Regen sessions  : {self.regen_sessions}")
-    if self.log_path:
-        print(f"  Log saved to    : {self.log_path}")
-    print("=" * 50)
+    def _print_summary(self):
+        print("\n" + "=" * 50)
+        print("  Session Summary")
+        print("=" * 50)
+        pct = self.regen_samples / self.total_samples * 100 if self.total_samples else 0
+        print(f"  Vehicle         : {self.vehicle_profile['name']}")
+        print(f"  Total samples   : {self.total_samples}")
+        print(f"  Regen samples   : {self.regen_samples}  ({pct:.1f}%)")
+        print(f"  Regen sessions  : {self.regen_sessions}")
+        if self.log_path:
+            print(f"  Log saved to    : {self.log_path}")
+        print("=" * 50)
 
 
 # entry point to run the program
