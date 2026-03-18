@@ -500,8 +500,13 @@ def _print_summary(self):
 
 # entry point to run the program
 def main():
-    pass
-
+    parser = argparse.ArgumentParser(
+        description="Detect regenerative braking via OBD-II",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Supported vehicles:\n" + "\n".join(
+            f"  {k:20} – {v['name']}" for k, v in VEHICLE_PROFILES.items()
+        )
+    )
 
 if __name__ == "__main__":
     main()
